@@ -1369,6 +1369,14 @@ class PlayState extends MusicBeatState
 		}
 		callOnLuas('onCreatePost', []);
 
+		for (script in luaArray) {
+			var bf = script.get('boyfriend');
+			if (bf.x ~= 0)
+				boyfriend.x = bf.x
+			if (bf.y ~= 0)
+				boyfriend.y = bf.y
+		}
+
 		super.create();
 
 		cacheCountdown();
