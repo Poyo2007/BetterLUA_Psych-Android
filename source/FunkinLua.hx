@@ -79,7 +79,9 @@ class FunkinLua {
 	#if hscript
 	public static var hscript:HScript = null;
 	#end
-	
+
+	var boyfriend_LUA = [x = 0, y = 0]
+
 	public function new(script:String) {
 		#if LUA_ALLOWED
 		lua = LuaL.newstate();
@@ -141,6 +143,9 @@ class FunkinLua {
 		set('weekRaw', PlayState.storyWeek);
 		set('week', WeekData.weeksList[PlayState.storyWeek]);
 		set('seenCutscene', PlayState.seenCutscene);
+
+		// goin to test smth...
+		set('boyfriend', boyfriend_LUA);
 
 		// Camera poo
 		set('cameraX', 0);
@@ -3166,6 +3171,48 @@ class FunkinLua {
 			if (status != Lua.LUA_OK) {
 				var error:String = getErrorMessage(status);
 				luaTrace("ERROR (" + func + "): " + error, false, false, FlxColor.RED);
+				return Function_Continue;
+			}
+
+			// If successful, pass and then return the result.
+			var result:Dynamic = cast Convert.fromLua(lua, -1);
+			if (result == null) result = Function_Continue;
+
+			Lua.pop(lua, 1);
+			return result;
+		}
+		catch (e:Dynamic) {
+			trace(e);
+		}
+		#end
+		return Function_Continue;
+	}
+
+	public function get(variable:String, args:Array<Dynamic>):Dynamic {
+		#if LUA_ALLOWED
+		if(closed) return Function_Continue;
+
+		try {
+			if(lua == null) return Function_Continue;
+
+			Lua.getglobal(lua, variable);
+			var type:Int = Lua.type(lua, -1);
+
+			if (type == Lua.LUA_TFUNCTION) {
+				if (type > Lua.LUA_TNIL)
+					luaTrace("ERROR (" + variable + "): attempt to call a function.", false, false, FlxColor.RED);
+
+				Lua.pop(lua, 1);
+				return Function_Continue;
+			}
+
+			for (arg in args) Convert.toLua(lua, arg);
+			var status:Int = Lua.pcall(lua, args.length, 1, 0);
+
+			// Checks if it's not successful, then show a error.
+			if (status != Lua.LUA_OK) {
+				var error:String = getErrorMessage(status);
+				luaTrace("ERROR (" + variable + "): " + error, false, false, FlxColor.RED);
 				return Function_Continue;
 			}
 
